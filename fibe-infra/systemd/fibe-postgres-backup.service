@@ -1,0 +1,12 @@
+[Unit]
+Description=Fibe PostgreSQL backup
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+Environment=PGHOST=127.0.0.1
+Environment=PGPORT=5432
+Environment=PGUSER=fibe_user
+Environment=PGDATABASE=fibe_db
+EnvironmentFile=/etc/fibe/backup.env
+ExecStart=/opt/fibe/scripts/pg_backup.sh
