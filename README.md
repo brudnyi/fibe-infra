@@ -15,6 +15,13 @@ Infrastructure repository for portable deployment of Fibe services to any single
 
 ## First-time server bootstrap
 
+### DNS before bootstrap
+
+Create A records:
+
+- `admin.fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
+- `api.fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
+
 1. Copy this repo to VM as `/opt/fibe`.
 2. Run bootstrap:
 
@@ -26,7 +33,7 @@ sudo /opt/fibe/scripts/bootstrap_vm.sh
 
 ```bash
 cp /opt/fibe/.env.example /opt/fibe/.env
-# edit /opt/fibe/.env with real domains, image names, and secrets
+# edit /opt/fibe/.env and set real secrets (domains are already set for fibe.pro)
 ```
 
 4. Configure PostgreSQL:

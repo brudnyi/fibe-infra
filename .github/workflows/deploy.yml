@@ -31,8 +31,8 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           BACKEND_IMAGE: ${{ github.event.inputs.backend_image || github.event.client_payload.backend_image }}
           ADMIN_IMAGE: ${{ github.event.inputs.admin_image || github.event.client_payload.admin_image }}
-          API_HEALTHCHECK_URL: ${{ secrets.API_HEALTHCHECK_URL || 'https://api.domain.tld/health' }}
-          ADMIN_HEALTHCHECK_URL: ${{ secrets.ADMIN_HEALTHCHECK_URL || 'https://admin.domain.tld/' }}
+          API_HEALTHCHECK_URL: ${{ secrets.API_HEALTHCHECK_URL || 'https://api.fibe.pro/health' }}
+          ADMIN_HEALTHCHECK_URL: ${{ secrets.ADMIN_HEALTHCHECK_URL || 'https://admin.fibe.pro/' }}
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}

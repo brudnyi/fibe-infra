@@ -2,8 +2,8 @@
 set -euo pipefail
 
 INFRA_DIR="${INFRA_DIR:-/opt/fibe}"
-API_HEALTHCHECK_URL="${API_HEALTHCHECK_URL:-https://api.domain.tld/health}"
-ADMIN_HEALTHCHECK_URL="${ADMIN_HEALTHCHECK_URL:-https://admin.domain.tld/}"
+API_HEALTHCHECK_URL="${API_HEALTHCHECK_URL:-https://api.fibe.pro/health}"
+ADMIN_HEALTHCHECK_URL="${ADMIN_HEALTHCHECK_URL:-https://admin.fibe.pro/}"
 
 cd "${INFRA_DIR}"
 
