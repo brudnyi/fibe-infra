@@ -1,6 +1,10 @@
 services:
   backend:
     image: ${BACKEND_IMAGE}
+    pull_policy: build
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -26,6 +30,10 @@ services:
 
   admin:
     image: ${ADMIN_IMAGE}
+    pull_policy: build
+    build:
+      context: ../admin
+      dockerfile: Dockerfile
     restart: unless-stopped
     networks:
       - edge
