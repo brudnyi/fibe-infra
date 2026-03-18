@@ -9,6 +9,7 @@ Infrastructure repository for portable deployment of Fibe services to any single
   - `admin`
   - `caddy` (TLS + reverse proxy)
 - Caddy subdomain routing (`admin.*`, `api.*`)
+- Static legal page at `https://fibe.pro/policy`
 - PostgreSQL setup scripts (system service + PostGIS)
 - Backup scripts and systemd units (daily backups, 7-day retention)
 - One-click deploy workflow for VM (`.github/workflows/deploy.yml`)
@@ -19,6 +20,7 @@ Infrastructure repository for portable deployment of Fibe services to any single
 
 Create A records:
 
+- `fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
 - `admin.fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
 - `api.fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
 

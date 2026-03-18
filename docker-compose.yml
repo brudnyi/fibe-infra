@@ -42,6 +42,7 @@ services:
     image: caddy:2.8-alpine
     restart: unless-stopped
     environment:
+      ROOT_DOMAIN: ${ROOT_DOMAIN}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
       API_DOMAIN: ${API_DOMAIN}
     ports:
@@ -49,6 +50,7 @@ services:
       - '443:443'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./policy:/srv/policy:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
