@@ -4,43 +4,24 @@ on:
   push:
     branches:
       - main
-  repository_dispatch:
-    types:
-      - backend_image_published
-      - admin_image_published
   workflow_dispatch:
-    inputs:
-      backend_image:
-        description: "Backend image tag (optional, default from .env)"
-        required: false
-        type: string
-      admin_image:
-        description: "Admin image tag (optional, default from .env)"
-        required: false
-        type: string
 
 jobs:
-  deploy:
+  sync_repo:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy on VM
+      - name: Sync infra repository on VM
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          GHCR_USERNAME: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          BACKEND_IMAGE: ${{ github.event.inputs.backend_image || github.event.client_payload.backend_image }}
-          ADMIN_IMAGE: ${{ github.event.inputs.admin_image || github.event.client_payload.admin_image }}
-          API_HEALTHCHECK_URL: ${{ secrets.API_HEALTHCHECK_URL || 'https://api.fibe.pro/health' }}
-          ADMIN_HEALTHCHECK_URL: ${{ secrets.ADMIN_HEALTHCHECK_URL || 'https://admin.fibe.pro/' }}
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           port: ${{ secrets.VM_PORT }}
-          envs: GHCR_USERNAME,GHCR_TOKEN,BACKEND_IMAGE,ADMIN_IMAGE,API_HEALTHCHECK_URL,ADMIN_HEALTHCHECK_URL
           script_stop: true
           script: |
             set -euo pipefail
             cd /opt/fibe
-            ./scripts/deploy.sh
+            git fetch --all --prune
+            git checkout main
+            git pull --ff-only origin main
