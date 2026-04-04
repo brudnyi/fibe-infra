@@ -23,11 +23,10 @@ jobs:
       - name: Checkout infra repository
         uses: actions/checkout@v4
 
-      - name: Install backup dependencies
+      - name: Verify docker availability
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y awscli postgresql-client
+          docker version
 
       - name: Ensure scripts are executable
         run: |

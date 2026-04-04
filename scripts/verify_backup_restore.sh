@@ -29,14 +29,18 @@ fi
 container_name="fibe-backup-verify-$(date +%s)-$$"
 postgres_password="postgres"
 verify_database="restore_verification"
+work_dir="$(mktemp -d)"
+restore_sql_path="${work_dir}/restore.sql"
 
 cleanup() {
   docker rm -f "${container_name}" >/dev/null 2>&1 || true
+  rm -rf "${work_dir}"
 }
 
 trap cleanup EXIT
 
 gzip -t "${backup_path}"
+gunzip -c "${backup_path}" > "${restore_sql_path}"
 
 log "Starting disposable PostgreSQL container ${container_name}"
 docker run -d \
@@ -60,10 +64,11 @@ if ! docker exec "${container_name}" pg_isready -U postgres -d "${verify_databas
 fi
 
 log "Restoring backup into disposable PostgreSQL"
-gunzip -c "${backup_path}" | docker exec -i "${container_name}" psql -v ON_ERROR_STOP=1 -U postgres -d "${verify_database}" >/dev/null
+docker cp "${restore_sql_path}" "${container_name}:/tmp/restore.sql"
+docker exec "${container_name}" psql -v ON_ERROR_STOP=1 -U postgres -d "${verify_database}" -f /tmp/restore.sql >/dev/null
 
 local_table_count="$(
-  docker exec "${container_name}" psql -At -U postgres -d "${verify_database}" <<'SQL'
+  docker exec -i "${container_name}" psql -At -U postgres -d "${verify_database}" <<'SQL'
 SELECT COUNT(*)
 FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
