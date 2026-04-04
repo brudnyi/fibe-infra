@@ -29,6 +29,7 @@ fi
 container_name="fibe-backup-verify-$(date +%s)-$$"
 verify_postgres_password="${VERIFY_POSTGRES_PASSWORD:-postgres}"
 verify_postgres_user="${VERIFY_POSTGRES_USER:-supabase_admin}"
+verify_bootstrap_database="${VERIFY_POSTGRES_BOOTSTRAP_DB:-postgres}"
 verify_database="${VERIFY_POSTGRES_DB:-restore_verification}"
 verify_postgres_host="${VERIFY_POSTGRES_HOST:-127.0.0.1}"
 verify_postgres_image="${VERIFY_POSTGRES_IMAGE:-supabase/postgres:17.6.1.096}"
@@ -74,7 +75,7 @@ docker "${docker_run_args[@]}" >/dev/null
 log "Waiting for PostgreSQL to become ready"
 for _ in $(seq 1 60); do
   if docker exec "${container_name}" sh -lc \
-    "PGPASSWORD='${verify_postgres_password}' pg_isready -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_database}'" \
+    "PGPASSWORD='${verify_postgres_password}' pg_isready -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_bootstrap_database}'" \
     >/dev/null 2>&1; then
     break
   fi
@@ -82,11 +83,19 @@ for _ in $(seq 1 60); do
 done
 
 if ! docker exec "${container_name}" sh -lc \
-  "PGPASSWORD='${verify_postgres_password}' pg_isready -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_database}'" \
+  "PGPASSWORD='${verify_postgres_password}' pg_isready -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_bootstrap_database}'" \
   >/dev/null 2>&1; then
   log "Disposable PostgreSQL container did not become ready in time"
   exit 1
 fi
+
+log "Creating empty verification database ${verify_database} from template0"
+docker exec "${container_name}" sh -lc \
+  "PGPASSWORD='${verify_postgres_password}' psql -v ON_ERROR_STOP=1 -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_bootstrap_database}' <<'SQL'
+DROP DATABASE IF EXISTS \"${verify_database}\";
+CREATE DATABASE \"${verify_database}\" WITH TEMPLATE template0;
+SQL" \
+  >/dev/null
 
 log "Restoring backup into disposable PostgreSQL"
 docker cp "${restore_sql_path}" "${container_name}:/tmp/restore.sql"
