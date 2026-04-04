@@ -64,7 +64,7 @@ create_backup() {
   local target_path="${work_dir}/${database_name}_${timestamp}.sql.gz"
   local target_name
   target_name="$(basename "${target_path}")"
-  local pg_client_image="${PG_CLIENT_IMAGE:-postgres:16-alpine}"
+  local pg_client_image="${PG_CLIENT_IMAGE:-postgres:17-alpine}"
 
   log "Creating dump for database ${database_name} with ${pg_client_image}"
   docker run --rm \
