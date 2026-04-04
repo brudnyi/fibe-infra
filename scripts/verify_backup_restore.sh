@@ -27,9 +27,13 @@ if ! command -v gunzip >/dev/null 2>&1; then
 fi
 
 container_name="fibe-backup-verify-$(date +%s)-$$"
-postgres_password="postgres"
-verify_database="restore_verification"
-verify_postgres_image="${VERIFY_POSTGRES_IMAGE:-postgres:17-alpine}"
+verify_postgres_password="${VERIFY_POSTGRES_PASSWORD:-postgres}"
+verify_postgres_user="${VERIFY_POSTGRES_USER:-supabase_admin}"
+verify_database="${VERIFY_POSTGRES_DB:-restore_verification}"
+verify_postgres_host="${VERIFY_POSTGRES_HOST:-127.0.0.1}"
+verify_postgres_image="${VERIFY_POSTGRES_IMAGE:-supabase/postgres:17.6.1.096}"
+verify_postgres_command="${VERIFY_POSTGRES_COMMAND:-postgres -D /etc/postgresql}"
+verify_postgres_platform="${VERIFY_POSTGRES_PLATFORM:-}"
 work_dir="$(mktemp -d)"
 restore_sql_path="${work_dir}/restore.sql"
 
@@ -44,38 +48,61 @@ gzip -t "${backup_path}"
 gunzip -c "${backup_path}" > "${restore_sql_path}"
 
 log "Starting disposable PostgreSQL container ${container_name}"
-docker run -d \
-  --rm \
-  --name "${container_name}" \
-  -e POSTGRES_PASSWORD="${postgres_password}" \
-  -e POSTGRES_DB="${verify_database}" \
-  "${verify_postgres_image}" >/dev/null
+docker_run_args=(
+  run
+  -d
+  --rm
+  --name "${container_name}"
+  -e POSTGRES_PASSWORD="${verify_postgres_password}"
+  -e POSTGRES_DB="${verify_database}"
+)
+
+if [[ -n "${verify_postgres_platform}" ]]; then
+  docker_run_args+=(--platform "${verify_postgres_platform}")
+fi
+
+docker_run_args+=("${verify_postgres_image}")
+
+if [[ -n "${verify_postgres_command}" ]]; then
+  # shellcheck disable=SC2206
+  verify_command_parts=( ${verify_postgres_command} )
+  docker_run_args+=("${verify_command_parts[@]}")
+fi
+
+docker "${docker_run_args[@]}" >/dev/null
 
 log "Waiting for PostgreSQL to become ready"
-for _ in $(seq 1 30); do
-  if docker exec "${container_name}" pg_isready -U postgres -d "${verify_database}" >/dev/null 2>&1; then
+for _ in $(seq 1 60); do
+  if docker exec "${container_name}" sh -lc \
+    "PGPASSWORD='${verify_postgres_password}' pg_isready -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_database}'" \
+    >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
 
-if ! docker exec "${container_name}" pg_isready -U postgres -d "${verify_database}" >/dev/null 2>&1; then
+if ! docker exec "${container_name}" sh -lc \
+  "PGPASSWORD='${verify_postgres_password}' pg_isready -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_database}'" \
+  >/dev/null 2>&1; then
   log "Disposable PostgreSQL container did not become ready in time"
   exit 1
 fi
 
 log "Restoring backup into disposable PostgreSQL"
 docker cp "${restore_sql_path}" "${container_name}:/tmp/restore.sql"
-docker exec "${container_name}" psql -v ON_ERROR_STOP=1 -U postgres -d "${verify_database}" -f /tmp/restore.sql >/dev/null
+docker exec "${container_name}" sh -lc \
+  "PGPASSWORD='${verify_postgres_password}' psql -v ON_ERROR_STOP=1 -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_database}' -f /tmp/restore.sql" \
+  >/dev/null
 
 local_table_count="$(
-  docker exec -i "${container_name}" psql -At -U postgres -d "${verify_database}" <<'SQL'
+  docker exec "${container_name}" sh -lc \
+    "PGPASSWORD='${verify_postgres_password}' psql -At -U '${verify_postgres_user}' -h '${verify_postgres_host}' -d '${verify_database}' <<'SQL'
 SELECT COUNT(*)
 FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE c.relkind IN ('r', 'p')
   AND n.nspname NOT IN ('pg_catalog', 'information_schema');
-SQL
+SQL"
 )"
 
 if [[ "${local_table_count}" =~ ^[0-9]+$ ]] && (( local_table_count > 0 )); then
