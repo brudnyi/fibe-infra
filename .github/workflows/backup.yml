@@ -12,7 +12,6 @@ jobs:
       contents: read
     env:
       BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
-      BACKUP_WORK_DIR: ${{ runner.temp }}/fibe-postgres-backups
       S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
       S3_REGION: ${{ secrets.S3_REGION }}
       S3_BUCKET: ${{ secrets.S3_BUCKET }}
@@ -39,6 +38,7 @@ jobs:
         id: create_dump
         run: |
           set -euo pipefail
+          export BACKUP_WORK_DIR="${RUNNER_TEMP}/fibe-postgres-backups"
           backup_path="$(./scripts/pg_backup.sh create)"
           echo "backup_path=${backup_path}" >> "${GITHUB_OUTPUT}"
 
