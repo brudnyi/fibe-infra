@@ -29,6 +29,7 @@ fi
 container_name="fibe-backup-verify-$(date +%s)-$$"
 postgres_password="postgres"
 verify_database="restore_verification"
+verify_postgres_image="${VERIFY_POSTGRES_IMAGE:-postgres:17-alpine}"
 work_dir="$(mktemp -d)"
 restore_sql_path="${work_dir}/restore.sql"
 
@@ -48,7 +49,7 @@ docker run -d \
   --name "${container_name}" \
   -e POSTGRES_PASSWORD="${postgres_password}" \
   -e POSTGRES_DB="${verify_database}" \
-  postgres:16-alpine >/dev/null
+  "${verify_postgres_image}" >/dev/null
 
 log "Waiting for PostgreSQL to become ready"
 for _ in $(seq 1 30); do

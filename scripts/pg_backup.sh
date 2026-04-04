@@ -73,12 +73,14 @@ create_backup() {
     -v "${work_dir}:/backup" \
     "${pg_client_image}" \
     sh -ceu '
+      sql_path="/backup/${TARGET_NAME%.gz}"
       pg_dump \
         --dbname="${BACKUP_DATABASE_URL}" \
         --no-owner \
         --no-privileges \
         --format=plain \
-        | gzip --stdout > "/backup/${TARGET_NAME}"
+        --file "${sql_path}"
+      gzip --force "${sql_path}"
     '
 
   gzip -t "${target_path}"
