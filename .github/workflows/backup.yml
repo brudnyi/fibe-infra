@@ -1,0 +1,70 @@
+name: postgres-backup
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_WORK_DIR: ${{ runner.temp }}/fibe-postgres-backups
+      S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+      S3_REGION: ${{ secrets.S3_REGION }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+      S3_PREFIX: ${{ secrets.S3_PREFIX }}
+
+    steps:
+      - name: Checkout infra repository
+        uses: actions/checkout@v4
+
+      - name: Install backup dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y awscli postgresql-client
+
+      - name: Ensure scripts are executable
+        run: |
+          set -euo pipefail
+          chmod +x scripts/pg_backup.sh scripts/verify_backup_restore.sh
+
+      - name: Create PostgreSQL dump
+        id: create_dump
+        run: |
+          set -euo pipefail
+          backup_path="$(./scripts/pg_backup.sh create)"
+          echo "backup_path=${backup_path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify dump by restoring into disposable PostgreSQL
+        run: |
+          set -euo pipefail
+          ./scripts/verify_backup_restore.sh "${{ steps.create_dump.outputs.backup_path }}"
+
+      - name: Upload verified dump to S3
+        id: upload_dump
+        run: |
+          set -euo pipefail
+          s3_uri="$(./scripts/pg_backup.sh upload-verified "${{ steps.create_dump.outputs.backup_path }}")"
+          echo "s3_uri=${s3_uri}" >> "${GITHUB_OUTPUT}"
+
+      - name: Report uploaded object
+        run: |
+          set -euo pipefail
+          echo "Backup uploaded to ${{ steps.upload_dump.outputs.s3_uri }}"
+
+      - name: Cleanup local artifacts
+        if: always()
+        run: |
+          set -euo pipefail
+          backup_path="${{ steps.create_dump.outputs.backup_path }}"
+          if [[ -n "${backup_path}" ]]; then
+            rm -f "${backup_path}"
+            rmdir "$(dirname "${backup_path}")" 2>/dev/null || true
+          fi

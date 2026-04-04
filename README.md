@@ -16,7 +16,7 @@ Infrastructure repository for portable deployment of Fibe services to any single
   - `caddy` (TLS + reverse proxy)
 - Caddy routing for `fibe.pro`, `admin.fibe.pro`, and `api.fibe.pro`
 - PostgreSQL setup scripts (system service + PostGIS)
-- Backup scripts and systemd units (daily backups, 7-day retention)
+- GitHub Actions backup pipeline for PostgreSQL -> S3 with restore verification on every run
 - One-click deploy workflow for VM (`.github/workflows/deploy.yml`)
 
 ## First-time server bootstrap
@@ -49,23 +49,7 @@ cp /opt/fibe/.env.example /opt/fibe/.env
 sudo DB_NAME=fibe_db DB_USER=fibe_user DB_PASSWORD='<strong_password>' /opt/fibe/scripts/setup_postgres.sh
 ```
 
-5. Configure backups:
-
-```bash
-sudo mkdir -p /etc/fibe
-sudo tee /etc/fibe/backup.env >/dev/null <<ENV
-PGPASSWORD=<strong_password>
-BACKUP_DIR=/var/backups/fibe-postgres
-RETENTION_DAYS=7
-ENV
-
-sudo cp /opt/fibe/systemd/fibe-postgres-backup.service /etc/systemd/system/
-sudo cp /opt/fibe/systemd/fibe-postgres-backup.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now fibe-postgres-backup.timer
-```
-
-6. Initial deploy:
+5. Initial deploy:
 
 ```bash
 cd /opt/fibe
@@ -85,6 +69,49 @@ cd /opt/fibe
 - `VM_USER`
 - `VM_PORT`
 - `VM_SSH_KEY`
+
+## PostgreSQL backup pipeline
+
+- Workflow: `.github/workflows/backup.yml`
+- Schedule: daily at `00:00 UTC`
+- Trigger: scheduled run plus manual `workflow_dispatch`
+- Source DB: direct PostgreSQL connection via `BACKUP_DATABASE_URL`
+- Output: gzip-compressed plain SQL dump uploaded to S3
+- Upload gate: every dump must restore successfully into a disposable PostgreSQL container before upload
+- Retention/immutability: managed by S3 bucket-side `Object Lock`; the workflow does not implement local retention or deletion windows
+
+### Required GitHub Secrets for backups
+
+- `BACKUP_DATABASE_URL`
+- `S3_ENDPOINT_URL`
+- `S3_REGION`
+- `S3_BUCKET`
+- `S3_ACCESS_KEY_ID`
+- `S3_SECRET_ACCESS_KEY`
+- Optional: `S3_PREFIX` (defaults to `postgresql`)
+
+Example `BACKUP_DATABASE_URL`:
+
+```text
+postgresql://postgres:<password>@db.gbihbkwogmgnkyuszhki.supabase.co:5432/postgres
+```
+
+### Backup flow
+
+1. `scripts/pg_backup.sh create` runs `pg_dump` against `BACKUP_DATABASE_URL`, produces a timestamped `.sql.gz` artifact, and validates gzip integrity.
+2. `scripts/verify_backup_restore.sh` starts a disposable PostgreSQL container and restores the dump with `gunzip | psql`.
+3. The restore check requires at least one non-system table after restore.
+4. Only after restore verification passes, `scripts/pg_backup.sh upload-verified` uploads the artifact to S3, verifies object presence with `head-object`, and removes the local temp file.
+
+### Object naming
+
+- Default prefix: `postgresql/`
+- File name: `<database_name>_YYYYMMDD_HHMMSS.sql.gz`
+- Resulting object key example: `postgresql/postgres_20260404_000000.sql.gz`
+
+### Manual run
+
+Use GitHub Actions `workflow_dispatch` to trigger an on-demand backup with the same validation path as the scheduled job.
 
 ## Required GitHub Secrets and Variables (in app repos that deploy over SSH)
 
