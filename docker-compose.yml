@@ -24,6 +24,7 @@ services:
       CLOUDINARY_KEY: ${CLOUDINARY_KEY}
       CLOUDINARY_SECRET: ${CLOUDINARY_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      APP_AUTH_ACTION_URL: ${APP_AUTH_ACTION_URL}
     networks:
       - edge
       - internal
