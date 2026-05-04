@@ -62,6 +62,7 @@ services:
     restart: unless-stopped
     environment:
       ROOT_DOMAIN: ${ROOT_DOMAIN}
+      WWW_DOMAIN: ${WWW_DOMAIN:-www.fibe.pro}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
       API_DOMAIN: ${API_DOMAIN}
     ports:

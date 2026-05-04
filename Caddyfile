@@ -1,29 +1,29 @@
-{$ROOT_DOMAIN} {
-  encode gzip zstd
-  reverse_proxy website:3000
-  header {
-    X-Content-Type-Options nosniff
-    X-Frame-Options SAMEORIGIN
-    Referrer-Policy strict-origin-when-cross-origin
-  }
+{$ROOT_DOMAIN}, {$WWW_DOMAIN} {
+	encode gzip zstd
+	reverse_proxy website:3000
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+	}
 }
 
 {$ADMIN_DOMAIN} {
-  encode gzip zstd
-  reverse_proxy admin:80
-  header {
-    X-Content-Type-Options nosniff
-    X-Frame-Options SAMEORIGIN
-    Referrer-Policy strict-origin-when-cross-origin
-  }
+	encode gzip zstd
+	reverse_proxy admin:80
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+	}
 }
 
 {$API_DOMAIN} {
-  encode gzip zstd
-  reverse_proxy backend:3001
-  header {
-    X-Content-Type-Options nosniff
-    X-Frame-Options SAMEORIGIN
-    Referrer-Policy strict-origin-when-cross-origin
-  }
+	encode gzip zstd
+	reverse_proxy backend:3001
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+	}
 }
