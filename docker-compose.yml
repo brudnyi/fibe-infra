@@ -39,23 +39,16 @@ services:
     networks:
       - edge
 
-  website:
-    image: ${WEBSITE_IMAGE:-ghcr.io/akbarbiinazar/fibe-website:latest}
+  landing:
+    image: ${LANDING_IMAGE:-ghcr.io/akbarbiinazar/fibe-landing:latest}
     pull_policy: build
     build:
-      context: ../fibe_website
+      context: ../fibe-landing
       dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://fibe.pro}
     restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${WEBSITE_PORT:-3000}
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://fibe.pro}
-      EVENTS_API_BASE_URL: ${EVENTS_API_BASE_URL:-https://api.fibe.pro}
-      API_BASE_URL: ${EVENTS_API_BASE_URL:-https://api.fibe.pro}
     networks:
       - edge
+      - internal
 
   caddy:
     image: caddy:2.8-alpine
@@ -73,7 +66,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - website
+      - landing
       - admin
       - backend
     networks:

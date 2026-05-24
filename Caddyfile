@@ -1,6 +1,6 @@
 {$ROOT_DOMAIN}, {$WWW_DOMAIN} {
 	encode gzip zstd
-	reverse_proxy website:3000
+	reverse_proxy landing:80
 	header {
 		X-Content-Type-Options nosniff
 		X-Frame-Options SAMEORIGIN
