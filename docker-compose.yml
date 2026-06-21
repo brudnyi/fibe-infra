@@ -48,6 +48,8 @@ services:
     build:
       context: ../fibe-landing
       dockerfile: Dockerfile
+      args:
+        PUBLIC_ORGANIZER_FORM_URL: ${PUBLIC_ORGANIZER_FORM_URL:-https://cabinet.fibe.pro/new}
     restart: unless-stopped
     networks:
       - edge
