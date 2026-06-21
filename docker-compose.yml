@@ -35,6 +35,9 @@ services:
     build:
       context: ../admin
       dockerfile: Dockerfile
+      args:
+        VITE_PUBLIC_API: ${VITE_API_BASE_URL:-https://api.fibe.pro}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
     networks:
       - edge
@@ -57,8 +60,8 @@ services:
       context: ../organizer-cabinet
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${ORGANIZER_CABINET_API_BASE_URL:-https://api.fibe.pro}
-        VITE_GOOGLE_MAPS_API_KEY: ${ORGANIZER_CABINET_GOOGLE_MAPS_API_KEY:-}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://api.fibe.pro}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
     networks:
       - edge
