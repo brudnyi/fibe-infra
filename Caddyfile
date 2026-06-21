@@ -18,6 +18,16 @@
 	}
 }
 
+{$CABINET_DOMAIN} {
+	encode gzip zstd
+	reverse_proxy organizer-cabinet:80
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}
+
 {$API_DOMAIN} {
 	encode gzip zstd
 	reverse_proxy backend:3001

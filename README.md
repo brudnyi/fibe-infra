@@ -13,8 +13,9 @@ Infrastructure repository for portable deployment of Fibe services to any single
   - `backend`
   - `admin`
   - `website`
+  - `organizer-cabinet`
   - `caddy` (TLS + reverse proxy)
-- Caddy routing for `fibe.pro`, `admin.fibe.pro`, and `api.fibe.pro`
+- Caddy routing for `fibe.pro`, `admin.fibe.pro`, `cabinet.fibe.pro`, and `api.fibe.pro`
 - PostgreSQL setup scripts (system service + PostGIS)
 - GitHub Actions backup pipeline for PostgreSQL -> S3 with restore verification on every run
 - One-click deploy workflow for VM (`.github/workflows/deploy.yml`)
@@ -27,6 +28,7 @@ Create A records:
 
 - `fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
 - `admin.fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
+- `cabinet.fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
 - `api.fibe.pro` -> `<YOUR_VM_PUBLIC_IP>`
 
 1. Copy this repo to VM as `/opt/fibe`.
@@ -58,7 +60,7 @@ cd /opt/fibe
 
 ## Continuous deploy model
 
-- `fibe-backend`, `fibe-admin`, and `fibe-website` publish Docker images to GHCR.
+- `fibe-backend`, `fibe-admin`, `fibe-website`, and `organizer-cabinet` publish Docker images to GHCR.
 - App repositories SSH into the VM and recreate only their own services via `docker compose`.
 - `fibe-infra` only syncs `/opt/fibe` on the VM, so service deploys always use the latest compose and Caddy configuration from the infra repo.
 - To move to a new server: clone `fibe-infra`, copy `.env`, run bootstrap/postgres/deploy scripts.
