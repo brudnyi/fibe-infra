@@ -1,2 +1,8 @@
 .env
+.env.*
+!.env.example
 *.log
+secrets/
+.s3-creds
+*.backup-*
+*.bak.*
