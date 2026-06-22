@@ -33,6 +33,9 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME}
       CORS_ORIGINS: ${CORS_ORIGINS}
       APP_AUTH_ACTION_URL: ${APP_AUTH_ACTION_URL}
+      FIREBASE_SERVICE_ACCOUNT_PATH: /app/firebase-key.json
+    volumes:
+      - /root/infra/secrets/firebase-key.json:/app/firebase-key.json:ro
     networks:
       - edge
       - internal
